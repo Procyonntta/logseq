@@ -3,6 +3,36 @@ apply plugin: 'com.android.application'
 apply from: 'capacitor.build.gradle'
 apply plugin: 'kotlin-android'
 
+def mobileWebDir = "$rootProject.projectDir/../static/mobile"
+def requiredMobileBundles = [
+        "$mobileWebDir/js/main.js",
+        "$mobileWebDir/js/code-editor.js"
+]
+
+def repoRoot = "$rootProject.projectDir/.."
+
+tasks.register('ensureMobileWebAssets') {
+    outputs.upToDateWhen {
+        requiredMobileBundles.every { file(it).exists() }
+    }
+
+    doLast {
+        def missingBundles = requiredMobileBundles.findAll { !file(it).exists() }
+        if (!missingBundles.isEmpty()) {
+            logger.lifecycle("Mobile bundles missing (${missingBundles.join(', ')}); running `yarn release-mobile`...")
+            exec {
+                workingDir repoRoot
+                commandLine 'yarn', 'release-mobile'
+            }
+        }
+
+        def stillMissing = requiredMobileBundles.findAll { !file(it).exists() }
+        if (!stillMissing.isEmpty()) {
+            throw new GradleException("Missing mobile bundle(s): ${stillMissing.join(', ')}. Run `yarn release-mobile` before building the Android app.")
+        }
+    }
+}
+
 android {
     namespace "com.logseq.app"
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -30,6 +60,8 @@ android {
         jvmTarget = '21'
     }
 }
+
+preBuild.dependsOn ensureMobileWebAssets
 
 repositories {
     flatDir {
