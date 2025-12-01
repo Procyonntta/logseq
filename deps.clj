@@ -410,7 +410,7 @@ For more info, see:
 
 (def zip-invalid-msg
   (str/join \n
-            ["The tools zip file may have not been succesfully downloaded."
+            ["The tools zip file may have not been successfully downloaded."
              "Please report this problem and keep a backup of the tools zip file as a repro."
              "You can try again by removing the $HOME/.deps.clj folder."]))
 
@@ -926,7 +926,7 @@ public class ClojureToolsDownloader {
   archive is not found, an attempt is made to download the archive
   from the official site and extract its contents locally. The archive
   is downloaded from this process directly, unless the `CLJ_JVM_OPTS`
-  env variable is set and a succesful attempt is made to download the
+  env variable is set and a successful attempt is made to download the
   archive by invoking a java subprocess passing the env variable value
   as command line options."
   [& command-line-args]
