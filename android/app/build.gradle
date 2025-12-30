@@ -38,6 +38,15 @@ android {
     kotlinOptions {
         jvmTarget = '21'
     }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a'
+            universalApk true
+        }
+    }
 }
 
 repositories {
