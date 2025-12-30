@@ -9,9 +9,9 @@ const config: CapacitorConfig = {
   appName: 'Logseq',
   webDir: 'static/mobile',
   loggingBehavior: 'debug',
-  server: {
+  /*server: {
     androidScheme: 'http',
-  },
+  },*/
   plugins: {
     StatusBar: {
       overlaysWebView: true,

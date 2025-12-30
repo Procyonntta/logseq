@@ -114,11 +114,7 @@ jobs:
           LOGSEQ_POSTHOG_TOKEN: ${{ secrets.LOGSEQ_POSTHOG_TOKEN }}
 
       - name: Upload Sentry Sourcemaps (beta only)
-        if: ${{ inputs.build-target == 'beta' || github.event.inputs.build-target == 'beta' }}
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: logseq
-          SENTRY_PROJECT: logseq
+        if: ${{ secrets.SENTRY_AUTH_TOKEN != '' && (inputs.build-target == 'beta' || github.event.inputs.build-target == 'beta') }}
         run: |
           if [ -z "$SENTRY_AUTH_TOKEN" ]; then
             echo "Skipping Sentry sourcemap upload: no token configured."
