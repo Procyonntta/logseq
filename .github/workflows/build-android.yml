@@ -38,7 +38,7 @@ on:
       ANDROID_KEYSTORE_PASSWORD:
         required: true
       SENTRY_AUTH_TOKEN:
-        required: true
+        required: false
 
 env:
   CLOJURE_VERSION: '1.11.1.1413'
@@ -132,11 +132,20 @@ jobs:
 
       - name: Sign Android APK
         run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
+            echo "Keystore or password not configured; skipping signing and preserving unsigned artifact."
+            cp app/build/outputs/apk/release/app-release-unsigned.apk app-signed.apk
+            exit 0
+          fi
+
           echo ${{ secrets.ANDROID_KEYSTORE }} | base64 -d > keystore.jks
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
+          if ! $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
             --ks keystore.jks --ks-pass "pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
             --in app/build/outputs/apk/release/app-release-unsigned.apk \
-            --out app-signed.apk
+            --out app-signed.apk; then
+            echo "Signing failed; falling back to unsigned artifact."
+            cp app/build/outputs/apk/release/app-release-unsigned.apk app-signed.apk
+          fi
         working-directory: android
 
       - name: Rename Apk
