@@ -113,29 +113,8 @@ jobs:
           LOGSEQ_SENTRY_DSN: ${{ secrets.LOGSEQ_SENTRY_DSN }}
           LOGSEQ_POSTHOG_TOKEN: ${{ secrets.LOGSEQ_POSTHOG_TOKEN }}
 
-      - name: Upload Sentry Sourcemaps (beta only)
-        if: ${{ (inputs.build-target || github.event.inputs.build-target || '') == 'beta' }}
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: logseq
-          SENTRY_PROJECT: logseq
-        run: |
-          if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
-            echo "Skipping Sentry sourcemap upload: no token configured."
-            exit 0
-          fi
 
-          curl -sL https://sentry.io/get-cli/ | SENTRY_CLI_VERSION=2.58.4 bash
 
-          if ! sentry-cli info >/dev/null 2>&1; then
-            echo "Skipping Sentry sourcemap upload: token is missing or invalid."
-            exit 0
-          fi
-
-          release_name="logseq-android@${{ steps.ref.outputs.version }}"
-          sentry-cli releases new "${release_name}"
-          sentry-cli releases files "${release_name}" upload-sourcemaps --ext map --ext js ./static/js --url-prefix '~/static/js'
-          sentry-cli releases finalize "${release_name}"
 
       - name: Sync public to Android Project
         run: npx cap sync android
