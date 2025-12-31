@@ -6,14 +6,12 @@ This document summarizes the intended native-first UX for the Android DB app whi
 - **Material 3 chrome**: Use Compose-based `TopAppBar` with the current page title and contextual actions. Bottom navigation hosts Journal, Pages, Search, and Graph/Settings tabs. Each tab preserves its own back stack.
 - **Back behavior**: System back gesture and button map to the active tab’s stack. When the stack is at root, back exits the app (after handing control to JS for in-editor pop if needed).
 - **Safe areas**: Surfaces should pad against status/navigation bars; WebView padding is managed by the Compose host to avoid overlapping toolbars.
-- **Navigation surface**: Default Android experience hides the legacy bottom nav in favor of the top app bar plus gestures (two-finger double tap to open Command Palette).
 
 ## Editor UI
 - **Editor toolbar**: Lives above the keyboard, shows default actions (indent/outdent, undo/redo, link, bold, italic, code, image, mic, slash). Toolbar order is user-customizable and stored in native preferences.
 - **Selection bar**: When blocks are multi-selected, show a native action bar with bulk actions (indent/outdent, move, link, delete, export).
 - **Gestures**: Provide both gestures and explicit buttons for indent/outdent. Bullet drag shows an insertion indicator and auto-scrolls while dragging.
 - **Slash palette**: Opens instantly with debounce + incremental search; results load progressively to avoid blocking typing.
-- **Command palette gesture**: Two-finger double tap anywhere opens CMDK on Android.
 
 ## Theming
 - Default to system theme (light/dark). Expose overrides in Settings (System / Light / Dark) with optional accent tint.
