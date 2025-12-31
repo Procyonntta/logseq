@@ -44,6 +44,10 @@ env:
   CLOJURE_VERSION: '1.11.1.1413'
   NODE_VERSION: '22'
   JAVA_VERSION: '21'
+  ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
 jobs:
   build-apk:
@@ -122,38 +126,54 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3.2.2
 
-      - name: Build Android
+      - name: Build Android Debug
         run: |
           ./gradlew clean
-          ./gradlew zipApksForRelease
+          ./gradlew :app:assembleDebug --no-daemon
+        working-directory: android
+        env:
+          LOGSEQ_SENTRY_DSN: ${{ secrets.LOGSEQ_SENTRY_DSN }}
+
+      - name: List debug APK outputs
+        run: ls -lah android/app/build/outputs/apk/debug || true
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: logseq-android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Build Android Release
+        if: ${{ env.ANDROID_KEYSTORE != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_PASSWORD != '' }}
+        run: |
+          ./gradlew clean
+          ./gradlew zipApksForRelease --no-daemon
         working-directory: android
         env:
           LOGSEQ_SENTRY_DSN: ${{ secrets.LOGSEQ_SENTRY_DSN }}
 
       - name: Sign Android APK
+        if: ${{ env.ANDROID_KEYSTORE != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_PASSWORD != '' }}
         run: |
-          if [ -z "${{ secrets.ANDROID_KEYSTORE }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
-            echo "Keystore or password not configured; skipping signing and preserving unsigned artifact."
-            cp app/build/outputs/apk/release/app-release-unsigned.apk app-signed.apk
-            exit 0
-          fi
-
-          echo ${{ secrets.ANDROID_KEYSTORE }} | base64 -d > keystore.jks
-          if ! $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
-            --ks keystore.jks --ks-pass "pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+          echo "$ANDROID_KEYSTORE" | base64 -d > keystore.jks
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
+            --ks keystore.jks \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass "pass:${ANDROID_KEYSTORE_PASSWORD}" \
+            --key-pass "pass:${ANDROID_KEY_PASSWORD}" \
             --in app/build/outputs/apk/release/app-release-unsigned.apk \
-            --out app-signed.apk; then
-            echo "Signing failed; falling back to unsigned artifact."
-            cp app/build/outputs/apk/release/app-release-unsigned.apk app-signed.apk
-          fi
+            --out app-release-signed.apk
         working-directory: android
 
-      - name: Rename Apk
+      - name: Rename Release Apk
+        if: ${{ env.ANDROID_KEYSTORE != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_PASSWORD != '' }}
         run: |
-          mkdir builds
-          mv android/app-signed.apk ./builds/Logseq-android-${{ steps.ref.outputs.version }}.apk
+          mkdir -p builds
+          mv android/app-release-signed.apk ./builds/Logseq-android-${{ steps.ref.outputs.version }}.apk
 
-      - name: Upload Artifact
+      - name: Upload Release Artifact
+        if: ${{ env.ANDROID_KEYSTORE != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_PASSWORD != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: logseq-android-builds
