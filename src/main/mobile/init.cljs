@@ -100,6 +100,9 @@
 
 (defn init! []
   (.addEventListener js/window "sendIntentReceived" intent/handle-received)
+  (.addEventListener js/window "logseq:native-open-command-palette"
+                     (fn []
+                       (state/pub-event! [:go/search])))
 
   ;; handle share for code start
   (intent/handle-received)

@@ -129,6 +129,7 @@
                       "add-graph" (state/pub-event! [:graph/new-db-graph])
                       "home-setting" (open-home-settings-actions!)
                       "graph-setting" (open-graph-settings-actions!)
+                      "search" (state/pub-event! [:go/search])
                       "sync" (shui/popup-show! nil
                                                (rtc-indicator/details)
                                                {})
@@ -172,23 +173,28 @@
                          [(conj {:id "audio-record" :systemIcon "waveform"})])
           right-buttons (cond
                           page?
-                          (into [{:id "page-setting" :systemIcon "ellipsis"}
+                          (into [{:id "search" :systemIcon "magnifyingglass"}
+                                 {:id "page-setting" :systemIcon "ellipsis"}
                                  {:id "favorite" :systemIcon (if favorited? "star.fill" "star")}])
 
                           (= tab "home")
                           (cond-> []
                             (nil? route-view)
                             (conj {:id "home-setting" :systemIcon "ellipsis"})
+                            (nil? route-view)
+                            (conj {:id "search" :systemIcon "magnifyingglass"})
                             (and rtc-indicator? (not page?))
                             (conj {:id "sync" :systemIcon "circle.fill" :color sync-color
                                    :size "small"}))
 
                           (= tab "graphs")
-                          [{:id "graph-setting" :systemIcon "ellipsis"}
+                          [{:id "search" :systemIcon "magnifyingglass"}
+                           {:id "graph-setting" :systemIcon "ellipsis"}
                            {:id "add-graph" :systemIcon "plus"}]
 
                           (= tab "capture")
-                          [{:id "capture" :systemIcon "paperplane"}]
+                          [{:id "search" :systemIcon "magnifyingglass"}
+                           {:id "capture" :systemIcon "paperplane"}]
 
                           :else nil)
           [left-buttons right-buttons] (if (mobile-util/native-android?)

@@ -1,13 +1,10 @@
 package com.logseq.app
 
-import android.graphics.Color
 import android.app.Activity
 import android.net.Uri
-import android.util.Log
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.FrameLayout
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,6 +16,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -74,12 +73,16 @@ object ComposeHost {
             tag = "compose-host-webview"
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                ComposeNavigationHost(
-                    navEvents = navEvents,
-                    webView = webView,
-                    onBackRequested = onBackRequested,
-                    onExit = onExit
-                )
+                LogseqComposeTheme {
+                    Surface(color = MaterialTheme.colorScheme.background) {
+                        ComposeNavigationHost(
+                            navEvents = navEvents,
+                            webView = webView,
+                            onBackRequested = onBackRequested,
+                            onExit = onExit
+                        )
+                    }
+                }
             }
         }
 
@@ -257,44 +260,46 @@ private fun HandleNavigationEvents(
     LaunchedEffect(navController) {
         var snapshotVersion = 0
         navEvents.collect { event ->
-            snapshotVersion += 1
-            val currentSnapshotVersion = snapshotVersion
-            WebViewSnapshotManager.showSnapshot("navigation", webView)
-            onNavType(event.navigationType)
-            val route = routeFor(event.path)
-            when (event.navigationType) {
-                "push" -> navController.navigate(route)
+            LogseqPerformanceTracer.trace("nav:${event.navigationType}:${event.path}") {
+                snapshotVersion += 1
+                val currentSnapshotVersion = snapshotVersion
+                WebViewSnapshotManager.showSnapshot("navigation", webView)
+                onNavType(event.navigationType)
+                val route = routeFor(event.path)
+                when (event.navigationType) {
+                    "push" -> navController.navigate(route)
 
-                "replace" -> {
-                    navController.popBackStack()
-                    navController.navigate(route) {
-                        launchSingleTop = true
-                    }
-                }
-
-                "pop" -> {
-                    if (!navController.popBackStack()) {
-                        // Already at root; nothing to pop.
-                    }
-                }
-
-                "reset" -> {
-                    navController.popBackStack(route = ROOT_ROUTE, inclusive = false)
-                    navController.navigate(route) {
-                        popUpTo(ROOT_ROUTE) {
-                            inclusive = true
+                    "replace" -> {
+                        navController.popBackStack()
+                        navController.navigate(route) {
+                            launchSingleTop = true
                         }
-                        launchSingleTop = true
                     }
+
+                    "pop" -> {
+                        if (!navController.popBackStack()) {
+                            // Already at root; nothing to pop.
+                        }
+                    }
+
+                    "reset" -> {
+                        navController.popBackStack(route = ROOT_ROUTE, inclusive = false)
+                        navController.navigate(route) {
+                            popUpTo(ROOT_ROUTE) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+
+                    else -> navController.navigate(route)
                 }
 
-                else -> navController.navigate(route)
-            }
-
-            launch {
-                delay(260)
-                if (currentSnapshotVersion == snapshotVersion) {
-                    WebViewSnapshotManager.clearSnapshot("navigation")
+                launch {
+                    delay(260)
+                    if (currentSnapshotVersion == snapshotVersion) {
+                        WebViewSnapshotManager.clearSnapshot("navigation")
+                    }
                 }
             }
         }

@@ -40,6 +40,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 @CapacitorPlugin(name = "NativeEditorToolbarPlugin")
 class NativeEditorToolbarPlugin : Plugin() {
     private var toolbarView: EditorToolbarView? = null
+    private var originalBottomPadding: Int? = null
 
     @PluginMethod
     fun present(call: PluginCall) {
@@ -83,6 +84,7 @@ class NativeEditorToolbarPlugin : Plugin() {
                 root.addView(view, lp)
             }
 
+            adjustWebViewPadding(view)
             call.resolve()
         }
     }
@@ -99,6 +101,7 @@ class NativeEditorToolbarPlugin : Plugin() {
         val root = activity?.let { NativeUiUtils.contentRoot(it) } ?: return
         toolbarView?.let { root.removeView(it) }
         toolbarView = null
+        restoreWebViewPadding()
     }
 
     private fun parseActions(array: JSArray?): List<EditorAction> {
@@ -109,6 +112,37 @@ class NativeEditorToolbarPlugin : Plugin() {
             EditorAction.from(obj)?.let { result.add(it) }
         }
         return result
+    }
+
+    private fun adjustWebViewPadding(toolbar: EditorToolbarView) {
+        val webView = bridge?.webView ?: return
+        if (originalBottomPadding == null) {
+            originalBottomPadding = webView.paddingBottom
+        }
+        toolbar.post {
+            val margin = NativeUiUtils.dp(toolbar.context, 12f)
+            val height = toolbar.height + margin
+            val inset = height.coerceAtLeast(0)
+            val base = originalBottomPadding ?: 0
+            webView.setPadding(
+                webView.paddingLeft,
+                webView.paddingTop,
+                webView.paddingRight,
+                base + inset
+            )
+        }
+    }
+
+    private fun restoreWebViewPadding() {
+        val webView = bridge?.webView ?: return
+        originalBottomPadding?.let { bottom ->
+            webView.setPadding(
+                webView.paddingLeft,
+                webView.paddingTop,
+                webView.paddingRight,
+                bottom
+            )
+        }
     }
 }
 
