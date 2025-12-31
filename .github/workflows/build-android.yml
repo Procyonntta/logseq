@@ -34,9 +34,13 @@ on:
         type: boolean
     secrets:
       ANDROID_KEYSTORE:
-        required: true
+        required: false
       ANDROID_KEYSTORE_PASSWORD:
-        required: true
+        required: false
+      ANDROID_KEY_ALIAS:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
       SENTRY_AUTH_TOKEN:
         required: false
 
@@ -52,6 +56,14 @@ env:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    env:
+      CLOJURE_VERSION: '1.11.1.1413'
+      NODE_VERSION: '22'
+      JAVA_VERSION: '21'
+      ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
