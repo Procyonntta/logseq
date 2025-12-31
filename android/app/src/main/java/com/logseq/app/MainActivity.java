@@ -43,6 +43,7 @@ public class MainActivity extends BridgeActivity {
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         webView.getSettings().setUseWideViewPort(true);
         webView.getSettings().setLoadWithOverviewMode(true);
+        installCommandPaletteGesture(webView);
 
         applyLogseqTheme();
 
@@ -197,6 +198,26 @@ public class MainActivity extends BridgeActivity {
         if (webView == null) return;
         webView.post(() -> webView.evaluateJavascript(
             "window.LogseqNative && window.LogseqNative.onNativePop && window.LogseqNative.onNativePop();",
+            null
+        ));
+    }
+
+    private void installCommandPaletteGesture(WebView webView) {
+        CommandPaletteGesture gesture = new CommandPaletteGesture(() -> {
+            dispatchCommandPalette(webView);
+            return null;
+        });
+
+        webView.setOnTouchListener((v, event) -> {
+            gesture.onTouch(event);
+            return false; // do not consume so scroll/selection still work
+        });
+    }
+
+    private void dispatchCommandPalette(WebView webView) {
+        if (webView == null) return;
+        webView.post(() -> webView.evaluateJavascript(
+            "window.dispatchEvent(new CustomEvent('logseq:native-open-command-palette'))",
             null
         ));
     }
